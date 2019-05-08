@@ -27,7 +27,8 @@
       {
         "fieldName": "subscriptMethod",
         "convertMethod": "getStringFromText",
-        "pattern": "(申购|认购)方式"
+        "pattern": "(申购|认购)方式",
+        "rowSkipPattern": "《|，|“"
       }
     ]
   }

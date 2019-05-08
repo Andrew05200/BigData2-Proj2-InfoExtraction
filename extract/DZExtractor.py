@@ -139,22 +139,21 @@ class DZExtractor(object):
                         rs_t.subscriptMethod = add_method
                 rs.extend(rs_table)
         # 2. 如果没有 Table Dict 则解析文本部分
-        # if len(rs) <= 0:
-        #     for rs_p in rs_paragraphs:
-        #         if rs_p.lockPeriod is None or len(rs_p.lockPeriod) < 1:
-        #             rs_p.lockPeriod = add_period
-        #         if rs_p.subscriptMethod is None or len(rs_p.subscriptMethod) < 1:
-        #             rs_p.subscriptMethod = add_method
-        #     return rs_paragraphs
-        # else:
-        #     return rs
-        for rs_p in rs_paragraphs:
-            if rs_p.lockPeriod is None or len(rs_p.lockPeriod) < 1:
-                rs_p.lockPeriod = add_period
-            if rs_p.subscriptMethod is None or len(rs_p.subscriptMethod) < 1:
-                rs_p.subscriptMethod = add_method
-        rs.extend(rs_paragraphs)
-        return rs
+        if len(rs) <= 0:
+            for rs_p in rs_paragraphs:
+                if rs_p.lockPeriod is None or len(rs_p.lockPeriod) < 1:
+                    rs_p.lockPeriod = add_period
+                if rs_p.subscriptMethod is None or len(rs_p.subscriptMethod) < 1:
+                    rs_p.subscriptMethod = add_method
+            return rs_paragraphs
+        else:
+            return rs
+        # for rs_p in rs_paragraphs:
+        #     if rs_p.lockPeriod is None or len(rs_p.lockPeriod) < 1:
+        #         rs_p.lockPeriod = add_period
+        #     if rs_p.subscriptMethod is None or len(rs_p.subscriptMethod) < 1:
+        #         rs_p.subscriptMethod = add_method
+        # rs.extend(rs_paragraphs)
 
 
     def extract_from_table_dict(self, table_dict):
@@ -175,60 +174,64 @@ class DZExtractor(object):
 
         # 假定第一行是表头部分则尝试进行规则匹配这一列是哪个类型的字段
         # 必须满足 is_match_pattern is True and is_match_col_skip_pattern is False
-        head_row = table_dict[0]
-        col_length = len(head_row)
-        # 遍历表格第一行 (表头) 的元素
-        for i in range(col_length):
-            text = head_row[i]
-            # 尝试匹配 table_dict_field_pattern 中的各个模式
-            for (field_name, table_dict_field_pattern) in self.table_dict_field_pattern_dict.items():
-                # 匹配成功
-                if table_dict_field_pattern.is_match_pattern(text) and \
-                        not table_dict_field_pattern.is_match_col_skip_pattern(text):
-                    if field_name not in field_col_dict:
-                        field_col_dict[field_name] = (i, "")
-                        if '%' in text:
-                            field_col_dict[field_name] = (i, '%')
-                        if '万' in text:
-                            field_col_dict[field_name] = (i, '万')
-                    # 逐行扫描这个字段的取值，如果满足 row_skip_pattern 则丢弃整行 row
-                    for j in range(1, row_length):
-                        try:
-                            text = table_dict[j][i]
-                            if table_dict_field_pattern.is_match_row_skip_pattern(text):
-                                skip_row_set.add(j)
-                        except KeyError:
-                            pass
-        # 没有扫描到有效的列
-        if len(field_col_dict) <= 0:
-            return rs
+        try:
+            head_row = table_dict[0]
+            col_length = len(head_row)
+            # 遍历表格第一行 (表头) 的元素
+            for i in range(col_length):
+                text = head_row[i]
+                # 尝试匹配 table_dict_field_pattern 中的各个模式
+                for (field_name, table_dict_field_pattern) in self.table_dict_field_pattern_dict.items():
+                    # 匹配成功
+                    if table_dict_field_pattern.is_match_pattern(text) and \
+                            not table_dict_field_pattern.is_match_col_skip_pattern(text):
+                        if field_name not in field_col_dict:
+                            field_col_dict[field_name] = (i, "")
+                            if '%' in text:
+                                field_col_dict[field_name] = (i, '%')
+                            if '万' in text:
+                                field_col_dict[field_name] = (i, '万')
+                        # 逐行扫描这个字段的取值，如果满足 row_skip_pattern 则丢弃整行 row
+                        for j in range(1, row_length):
+                            try:
+                                text = table_dict[j][i]
+                                if table_dict_field_pattern.is_match_row_skip_pattern(text):
+                                    skip_row_set.add(j)
+                            except KeyError:
+                                pass
+            # 没有扫描到有效的列
+            if len(field_col_dict) <= 0:
+                return rs
 
-        # 遍历每个有效行，获取 record
-        exit_flag = False
-        for row_index in range(1, row_length):
-            if row_index in skip_row_set:
-                continue
-            record = DZRecord(None, None, None, None, None)
-            for (field_name, col_index) in field_col_dict.items():
-                try:
-                    text = table_dict[row_index][col_index[0]] + col_index[1]
-                    if field_name == 'addObject':
-                        record.addObject = self.table_dict_field_pattern_dict.get(field_name).convert(text)
-                    elif field_name == 'addNumber':
-                        record.addNumber = self.table_dict_field_pattern_dict.get(field_name).convert(text)
-                    elif field_name == 'addAmount':
-                        record.addAmount = self.table_dict_field_pattern_dict.get(field_name).convert(text)
-                    elif field_name == 'lockPeriod':
-                        record.lockPeriod = self.table_dict_field_pattern_dict.get(field_name).convert(text)
-                    elif field_name == 'subsrciptMethod':
-                        record.subscriptMethod = self.table_dict_field_pattern_dict.get(field_name).convert(text)
-                    else:
+            # 遍历每个有效行，获取 record
+            exit_flag = False
+            for row_index in range(1, row_length):
+                if row_index in skip_row_set:
+                    continue
+                record = DZRecord(None, None, None, None, None)
+                for (field_name, col_index) in field_col_dict.items():
+                    try:
+                        text = table_dict[row_index][col_index[0]] + col_index[1]
+                        if field_name == 'addObject':
+                            record.addObject = self.table_dict_field_pattern_dict.get(field_name).convert(text)
+                        elif field_name == 'addNumber':
+                            record.addNumber = self.table_dict_field_pattern_dict.get(field_name).convert(text)
+                        elif field_name == 'addAmount':
+                            record.addAmount = self.table_dict_field_pattern_dict.get(field_name).convert(text)
+                        elif field_name == 'lockPeriod':
+                            record.lockPeriod = self.table_dict_field_pattern_dict.get(field_name).convert(text)
+                        elif field_name == 'subsrciptMethod':
+                            record.subscriptMethod = self.table_dict_field_pattern_dict.get(field_name).convert(text)
+                        else:
+                            pass
+                    except KeyError:
                         pass
-                except KeyError:
-                    pass
-            rs.append(record)
-            if exit_flag:
-                break
+                rs.append(record)
+                if exit_flag:
+                    break
+
+        except KeyError:
+            pass
 
         # 返回结果
         return rs

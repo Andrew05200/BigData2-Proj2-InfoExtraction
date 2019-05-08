@@ -19,3 +19,6 @@ https://github.com/dmjvictory/fddc-extraction-release.git
 
 运行python环境为： python3.6
 NER部分采用 [pyltp](http://pyltp.readthedocs.io/zh_CN/develop/api.html) 需要下载相关模型文件并在app.py中配置相关模型目录路径 ner_model_dir_path
+
+[完整报告](<https://www.virgilsun.com/%E9%87%91%E8%9E%8D%E6%96%87%E6%9C%AC%E6%95%B0%E6%8D%AE%E6%8F%90%E5%8F%96/>)
+

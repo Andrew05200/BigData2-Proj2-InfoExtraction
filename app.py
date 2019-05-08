@@ -32,8 +32,8 @@ def extract_dz(dz_ex, html_dir_path, html_id):
     record_list = []
     for record in dz_ex.extract(os.path.join(html_dir_path, html_id)):
         if record is not None and record.addObject is not None and len(record.addObject) > 1 and\
-                record.addNumber is not None and record.addNumber.isdigit():
-            record_list.append("%s,%s" % (html_id, record.to_result()))
+                record.addNumber is not None and record.addNumber.isdigit() and len(record.addNumber) >= 4:
+            record_list.append("%s,%s" % (html_id[:-5], record.to_result()))
     for record in record_list:
         print(record)
     return record_list
@@ -66,4 +66,4 @@ if __name__ == "__main__":
     ner_blacklist_file_path = './config/ner_com_blacklist.txt'
 
     dz_ex = DZExtractor(dz_config_file_path, ner_model_dir_path, ner_blacklist_file_path)
-    extract_dz_from_html_dir(dz_ex, './data', './results/DZ.csv')
+    extract_dz_from_html_dir(dz_ex, '../data/定增/html', './results/DZ.csv')
